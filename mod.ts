@@ -40,6 +40,7 @@ export interface Collection {
 	addDocument<T>(body: T): Promise<Document<T>>
 	findOneDocument(key: string, values: (string | RegExp)[]): Promise<string | null>
 	findManyDocuments(key: string, values: (string | RegExp)[]): Promise<string[]>
+	exists(): Promise<boolean>
 }
 
 export interface Document<T> {
@@ -213,6 +214,15 @@ export function getInstance(host: string): Instance {
 				})
 			}
 
+			async function exists() {
+				return await fetch(`${host}/${databaseName}/collections/${collectionName}`, {
+					headers: { authentication: auth ?? '' },
+				}).then(res => {
+					if (!res.ok) return false
+					return true
+				})
+			}
+
 			return {
 				getName: () => collectionName,
 				remove,
@@ -222,6 +232,7 @@ export function getInstance(host: string): Instance {
 				addDocument,
 				findOneDocument,
 				findManyDocuments,
+				exists,
 			}
 		}
 
