@@ -7,6 +7,14 @@ export interface AddDatabaseOptions {
 	masterPassword?: string
 }
 
+export interface DatabaseUsage {
+	size: number
+	requests: {
+		read: number
+		write: number
+	}
+}
+
 export interface Instance {
 	getDatabase(name: string, options: GetDatabaseOptions): Database
 	addDatabase(name: string, options: AddDatabaseOptions): Promise<Database>
@@ -19,6 +27,8 @@ export interface Database {
 	listCollections(): Promise<string[]>
 	getCollection(name: string): Collection
 	addCollection(name: string): Promise<Collection>
+	exists(): Promise<boolean>
+	getUsage(): Promise<DatabaseUsage>
 }
 
 export interface Collection {
@@ -227,6 +237,27 @@ export function getInstance(host: string): Instance {
 			return getCollection(name)
 		}
 
+		async function exists() {
+			try {
+				await getUsage()
+				return true
+			} catch (_) {
+				return false
+			}
+		}
+
+		async function getUsage(): Promise<DatabaseUsage> {
+			const usage: DatabaseUsage = await fetch(`${host}/${databaseName}`, {
+				headers: { authentication: auth ?? '' },
+			}).then(async res => {
+				if (!res.ok) throw new Error(`Received status ${res.status} from server when adding a collection: ${await res.json()}`)
+
+				return res.json()
+			})
+
+			return usage
+		}
+
 		return {
 			getName: () => databaseName,
 			remove,
@@ -234,6 +265,8 @@ export function getInstance(host: string): Instance {
 			listCollections,
 			getCollection,
 			addCollection,
+			exists,
+			getUsage,
 		}
 	}
 
