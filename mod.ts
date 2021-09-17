@@ -23,7 +23,7 @@ export interface Instance {
 export interface Database {
 	getName: () => string
 	remove(): Promise<void>
-	edit(newName: string, newAuth: string | null): Promise<void>
+	edit(newName: string, newAuth: string | null, masterPassword: string | null): Promise<void>
 	listCollections(): Promise<string[]>
 	getCollection(name: string): Collection
 	addCollection(name: string): Promise<Collection>
@@ -64,10 +64,10 @@ export function getInstance(host: string): Instance {
 			})
 		}
 
-		async function edit(newName: string, newAuth: string | null): Promise<void> {
+		async function edit(newName: string, newAuth: string | null, masterPassword: string | null): Promise<void> {
 			await fetch(`${host}/${databaseName}`, {
 				method: 'PUT',
-				headers: { authentication: auth ?? '', 'Content-Type': 'application/json' },
+				headers: { authentication: masterPassword ?? '', 'Content-Type': 'application/json' },
 				body: JSON.stringify({ name: newName, auth: newAuth }),
 			}).then(async res => {
 				if (!res.ok) throw new Error(`Received status ${res.status} from server when editing a database: ${await res.json()}`)
